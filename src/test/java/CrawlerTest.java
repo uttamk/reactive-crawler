@@ -1,31 +1,37 @@
 import io.reactivex.observers.TestObserver;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
 class CrawlerTest {
     @Test
-    void shouldCrawlWhenThereIsOneLevel() throws IOException {
-        TestObserver<Link> testObserver = new TestObserver<>();
+    void shouldCrawlWhenThereIsOneLevel() {
+        TestObserver<Link> testObserver = crawl(1, "http://localhost:3000/level1.html");
 
-        new Crawler(1)
-                .crawl("https://google.com")
-                .subscribe(testObserver);
-
-
-        testObserver.assertValueCount(29);
+        testObserver.assertValueCount(2);
     }
 
     @Test
-    void shouldCrawlWhenThereAreTwoLevels() throws IOException {
+    void shouldCrawlWhenThereAreTwoLevels() {
+        TestObserver<Link> testObserver = crawl(2, "http://localhost:3000/level1.html");
+
+
+        testObserver.assertValueCount(8);
+    }
+
+    @Test
+    void shouldCrawlWhenThereAreThreeLevels() {
+        TestObserver<Link> testObserver = crawl(3, "http://localhost:3000/level1.html");
+
+
+        testObserver.assertValueCount(14);
+    }
+
+    private TestObserver<Link> crawl(int level, String url) {
         TestObserver<Link> testObserver = new TestObserver<>();
 
-        new Crawler(2)
-                .crawl("https://google.com")
+        new Crawler(level)
+                .crawl(url)
                 .subscribe(testObserver);
-
-
-        testObserver.assertValueCount(10);
+        return testObserver;
     }
 }
 
