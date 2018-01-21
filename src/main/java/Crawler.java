@@ -22,15 +22,11 @@ public class Crawler {
     }
 
     private Observable<Link> crawl(Link link, int level) {
-        Observable<Link> singleLink = Observable.just(link);
-
-        if (level == levelLimit) {
-            return singleLink;
-        }
-        return crawl(link.getUrl(), level + 1)
-                .flatMap(c -> Observable.concat(singleLink, Observable.just(c)))
-                .distinct();
-
+        return Observable.just(link).compose(
+                o -> level == levelLimit ? o
+                        : crawl(link.getUrl(), level + 1)
+                        .flatMap(c -> Observable.concat(o, Observable.just(c)))
+                        .distinct());
     }
 
 }

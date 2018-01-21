@@ -29,7 +29,7 @@ class CrawlerTest {
     void shouldResumeWithOtherLinksIfOneLinkIsBroken() {
         TestObserver<Link> testObserver = crawl(2, "http://localhost:3000/broken.html");
 
-        testObserver.assertValueCount(3);
+        testObserver.assertValueCount(7);
     }
 
     private TestObserver<Link> crawl(int levelLimit, String url) {
