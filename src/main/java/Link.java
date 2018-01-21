@@ -1,7 +1,7 @@
 public class Link {
     private String url;
 
-    public Link(String url) {
+    Link(String url) {
 
         this.url = url;
     }

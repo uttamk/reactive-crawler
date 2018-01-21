@@ -1,44 +1,61 @@
+import com.google.common.io.Resources;
 import io.reactivex.observers.TestObserver;
+import org.jsoup.Jsoup;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
 
 class CrawlerTest {
     @Test
-    void shouldCrawlWhenThereIsOneLevel() {
-        TestObserver<Link> testObserver = crawl(1, "http://localhost:3000/level1.html");
+    void shouldCrawlWhenThereIsOneLevel() throws IOException {
+        TestObserver<Page> testObserver = crawl(1, "http://localhost:3000/level1.html");
 
-        testObserver.assertValueCount(2);
+        testObserver.assertValueCount(1);
+        Page page = testObserver.values().get(0);
+        Assertions.assertEquals("http://localhost:3000/level1.html", page.getUrl());
+        Assertions.assertEquals(fileContent("level1.html"), page.getContent());
+        Assertions.assertEquals(2, page.getLinks().size());
     }
 
     @Test
     void shouldCrawlWhenThereAreTwoLevels() {
-        TestObserver<Link> testObserver = crawl(2, "http://localhost:3000/level1.html");
+        TestObserver<Page> testObserver = crawl(2, "http://localhost:3000/level1.html");
 
 
-        testObserver.assertValueCount(8);
+        testObserver.assertValueCount(3);
     }
 
     @Test
     void shouldCrawlWhenThereAreThreeLevels() {
-        TestObserver<Link> testObserver = crawl(3, "http://localhost:3000/level1.html");
+        TestObserver<Page> testObserver = crawl(3, "http://localhost:3000/level1.html");
 
 
-        testObserver.assertValueCount(14);
+        testObserver.assertValueCount(9);
     }
 
     @Test
     void shouldResumeWithOtherLinksIfOneLinkIsBroken() {
-        TestObserver<Link> testObserver = crawl(2, "http://localhost:3000/broken.html");
+        TestObserver<Page> testObserver = crawl(2, "http://localhost:3000/broken.html");
 
-        testObserver.assertValueCount(7);
+        testObserver.assertValueCount(3);
     }
 
-    private TestObserver<Link> crawl(int levelLimit, String url) {
-        TestObserver<Link> testObserver = new TestObserver<>();
+    private TestObserver<Page> crawl(int levelLimit, String url) {
+        TestObserver<Page> testObserver = new TestObserver<>();
 
         new Crawler(levelLimit)
                 .crawl(url)
                 .subscribe(testObserver);
         return testObserver;
+    }
+
+
+    private String fileContent(String fileName) throws IOException {
+
+        String content = Resources.toString(Resources.getResource(fileName), Charset.forName("UTF-8"));
+        return Jsoup.parse(content).html();
     }
 }
 

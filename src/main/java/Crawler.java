@@ -1,5 +1,9 @@
 import io.reactivex.Observable;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Crawler {
     private int levelLimit;
@@ -9,24 +13,32 @@ public class Crawler {
         this.levelLimit = levelLimit;
     }
 
-    public Observable<Link> crawl(String url) {
+    public Observable<Page> crawl(String url) {
         return crawl(url, 1);
     }
 
-    private Observable<Link> crawl(String url, int level) {
+    private Observable<Page> crawl(String url, int level) {
         return Observable.just(url)
                 .map(u -> Jsoup.connect(u).get())
-                .flatMap(doc -> Observable.fromIterable(doc.select("a")))
                 .onErrorResumeNext(Observable.empty())
-                .flatMap(a -> crawl(new Link(a.attr("href")), level));
+                .map(doc -> new Page(url, getLinks(doc), doc.html()))
+                .flatMap(page -> Observable.concat(Observable.just(page), crawl(page.getLinks(), level))).distinct();
     }
 
-    private Observable<Link> crawl(Link link, int level) {
-        return Observable.just(link).compose(
-                o -> level == levelLimit ? o
-                        : crawl(link.getUrl(), level + 1)
-                        .flatMap(c -> Observable.concat(o, Observable.just(c)))
-                        .distinct());
+    private Observable<Page> crawl(List<Link> links, int level) {
+        return Observable.fromIterable(links)
+                .compose(o -> level == levelLimit ? Observable.empty()
+                        : o.flatMap(link -> crawl(link.getUrl(), level + 1))
+                );
+
+    }
+
+    private List<Link> getLinks(Document doc) {
+        return doc.select("a")
+                .stream()
+                .map(e -> new Link(e.attr("href")))
+                .collect(Collectors.toList());
     }
 
 }
+
