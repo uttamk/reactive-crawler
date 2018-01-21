@@ -1,12 +1,12 @@
 public class Link {
-    private String href;
+    private String url;
 
-    public Link(String href) {
+    public Link(String url) {
 
-        this.href = href;
+        this.url = url;
     }
 
-    public String getHref() {
-        return href;
+    public String getUrl() {
+        return url;
     }
 }

@@ -1,35 +1,36 @@
 import io.reactivex.Observable;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 
 public class Crawler {
-    private int maxLevels;
+    private int levelLimit;
 
-    Crawler(int maxLevels) {
+    Crawler(int levelLimit) {
 
-        this.maxLevels = maxLevels;
+        this.levelLimit = levelLimit;
     }
 
-    public Observable<Link> crawl(String urlString) {
-        return crawlUrl(urlString, 1);
+    public Observable<Link> crawl(String url) {
+        return crawl(url, 1);
     }
 
-    private Observable<Link> crawlUrl(String urlString, int level) {
+    private Observable<Link> crawl(String url, int level) {
+        return Observable.just(url)
+                .map(u -> Jsoup.connect(u).get())
+                .flatMap(doc -> Observable.fromIterable(doc.select("a")))
+                .onErrorResumeNext(Observable.empty())
+                .flatMap(a -> crawl(new Link(a.attr("href")), level));
+    }
 
-        Observable<Link> currentLevelLinks = Observable
-                .just(urlString)
-                .flatMap(url -> {
-                    Document document = Jsoup.connect(urlString).get();
-                    Elements aTags = document.select("a");
-                    return Observable.fromIterable(aTags).map(tag -> new Link(tag.select("a").attr("href")));
-                });
+    private Observable<Link> crawl(Link link, int level) {
+        Observable<Link> singleLink = Observable.just(link);
 
-        Observable<Link> nextLevelLinks = level < maxLevels
-                ? currentLevelLinks.flatMap(link -> crawlUrl(link.getHref(), level + 1))
-                : Observable.empty();
+        if (level == levelLimit) {
+            return singleLink;
+        }
+        return crawl(link.getUrl(), level + 1)
+                .flatMap(c -> Observable.concat(singleLink, Observable.just(c)))
+                .distinct();
 
-        return Observable.merge(currentLevelLinks, nextLevelLinks);
     }
 
 }

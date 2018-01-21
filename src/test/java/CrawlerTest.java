@@ -25,10 +25,17 @@ class CrawlerTest {
         testObserver.assertValueCount(14);
     }
 
-    private TestObserver<Link> crawl(int level, String url) {
+    @Test
+    void shouldResumeWithOtherLinksIfOneLinkIsBroken() {
+        TestObserver<Link> testObserver = crawl(2, "http://localhost:3000/broken.html");
+
+        testObserver.assertValueCount(3);
+    }
+
+    private TestObserver<Link> crawl(int levelLimit, String url) {
         TestObserver<Link> testObserver = new TestObserver<>();
 
-        new Crawler(level)
+        new Crawler(levelLimit)
                 .crawl(url)
                 .subscribe(testObserver);
         return testObserver;
