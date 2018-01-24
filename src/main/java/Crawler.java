@@ -1,3 +1,5 @@
+import com.sun.tools.javac.comp.Flow;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -13,22 +15,22 @@ public class Crawler {
         this.levelLimit = levelLimit;
     }
 
-    public Observable<Page> crawl(String url) {
+    public Flowable<Page> crawl(String url) {
         return crawl(url, 1);
     }
 
-    private Observable<Page> crawl(String url, int level) {
-        if(level > levelLimit)
-            return Observable.empty();
-        return Observable.just(url)
+    private Flowable<Page> crawl(String url, int level) {
+        if (level > levelLimit)
+            return Flowable.empty();
+        return Flowable.just(url)
                 .map(u -> Jsoup.connect(u).get())
-                .onErrorResumeNext(Observable.empty())
+                .onErrorResumeNext(Flowable.empty())
                 .map(doc -> new Page(url, getLinks(doc), doc.html()))
-                .flatMap(page -> Observable.concat(Observable.just(page), crawl(page.getLinks(), level))).distinct();
+                .flatMap(page -> Flowable.concat(Flowable.just(page), crawl(page.getLinks(), level))).distinct();
     }
 
-    private Observable<Page> crawl(List<Link> links, int level) {
-        return Observable.fromIterable(links).flatMap(link -> crawl(link.getUrl(), level + 1));
+    private Flowable<Page> crawl(List<Link> links, int level) {
+        return Flowable.fromIterable(links).flatMap(link -> crawl(link.getUrl(), level + 1));
 
 
     }
