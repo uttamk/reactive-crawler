@@ -18,6 +18,8 @@ public class Crawler {
     }
 
     private Observable<Page> crawl(String url, int level) {
+        if(level > levelLimit)
+            return Observable.empty();
         return Observable.just(url)
                 .map(u -> Jsoup.connect(u).get())
                 .onErrorResumeNext(Observable.empty())
@@ -26,10 +28,8 @@ public class Crawler {
     }
 
     private Observable<Page> crawl(List<Link> links, int level) {
-        return Observable.fromIterable(links)
-                .compose(o -> level == levelLimit ? Observable.empty()
-                        : o.flatMap(link -> crawl(link.getUrl(), level + 1), 6)
-                );
+        return Observable.fromIterable(links).flatMap(link -> crawl(link.getUrl(), level + 1));
+
 
     }
 
