@@ -1,30 +1,37 @@
-import io.reactivex.schedulers.Schedulers;
-
 public class Main {
     public static void main(String args[]) throws InterruptedException {
         String url = args[0];
         int levelLimit = Integer.parseInt(args[1]);
-        final PageCounter counter = new PageCounter();
+        final PageCounter status = new PageCounter();
+        long startTime = System.currentTimeMillis();
+
         new Crawler(levelLimit)
                 .crawl(url)
-                .doOnComplete(() -> System.exit(0))
-                .doOnError((err) -> System.exit(1))
-                .subscribeOn(Schedulers.newThread())
+                .doOnComplete(() -> {
+                    long endTime = System.currentTimeMillis();
+                    System.out.println("Done crawling in " + (endTime - startTime) / 1000 + " seconds");
+                    System.exit(0);
+                })
+                .doOnError(err -> {
+                    System.out.println(err.getMessage());
+                    System.exit(1);
+                })
                 .subscribe(page -> {
-                    counter.increment();
+                    System.out.println(page.getUrl());
+                    System.out.println(status.getCount());
+                    status.incrementCount();
                 });
+
         while (true) {
-            Thread.sleep(60000);
-            System.out.println(counter.getCount());
-            System.exit(0);
+            Thread.sleep(1000);
         }
     }
 }
 
 class PageCounter {
-    private int count;
+    private volatile int count;
 
-    public int increment() {
+    public int incrementCount() {
         count += 1;
         return count;
     }
@@ -32,5 +39,4 @@ class PageCounter {
     public int getCount() {
         return count;
     }
-
 }

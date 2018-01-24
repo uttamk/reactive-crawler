@@ -1,6 +1,5 @@
-import com.sun.tools.javac.comp.Flow;
 import io.reactivex.Flowable;
-import io.reactivex.Observable;
+import io.reactivex.schedulers.Schedulers;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -30,7 +29,11 @@ public class Crawler {
     }
 
     private Flowable<Page> crawl(List<Link> links, int level) {
-        return Flowable.fromIterable(links).flatMap(link -> crawl(link.getUrl(), level + 1));
+        return Flowable.fromIterable(links)
+                .parallel(10)
+                .runOn(Schedulers.io())
+                .flatMap(link -> crawl(link.getUrl(), level + 1))
+                .sequential();
 
 
     }
