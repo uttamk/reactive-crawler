@@ -1,3 +1,5 @@
+import io.reactivex.schedulers.Schedulers;
+
 public class Main {
     public static void main(String args[]) throws InterruptedException {
         String url = args[0];
@@ -9,17 +11,20 @@ public class Main {
                 .crawl(url)
                 .doOnComplete(() -> {
                     long endTime = System.currentTimeMillis();
-                    System.out.println("Done crawling in " + (endTime - startTime) / 1000 + " seconds");
+                    System.out.println(status.getCount() + " links crawled in " + (endTime - startTime) / 1000 + " seconds");
                     System.exit(0);
                 })
                 .doOnError(err -> {
-                    System.out.println(err.getMessage());
+                    System.out.println(err);
                     System.exit(1);
-                })
+                }).subscribeOn(Schedulers.single())
                 .subscribe(page -> {
-                    System.out.println(page.getUrl());
-                    System.out.println(status.getCount());
                     status.incrementCount();
+                    if (status.getCount() % 100 == 0) {
+                        long endTime = System.currentTimeMillis();
+                        System.out.println(status.getCount() + " links crawled in " + (endTime - startTime) / 1000 + " seconds");
+                        System.out.println(page.getUrl());
+                    }
                 });
 
         while (true) {
